@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+# Run this to convert all PNG files in the current directory to lossless WEBPs.
+# Useful for converting game assets for use with Foundry VTT.
+# Requires that ImageMagick is installed.
+
+find . -name "*.png" -depth 1 -print0 | while read -d $'\0' FILE
+do
+  convert "$FILE" -define webp:lossless=true "${FILE%%.png}.webp"
+  echo "Converted $FILE"
+done
+echo "Finished."

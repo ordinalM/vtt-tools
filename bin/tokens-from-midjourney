@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+
+DEFAULT_FOLDER="$HOME/Dropbox/Photos/Midjourney"
+PREFIX="token"
+FORMAT="webp"
+SPLIT=50
+COLOURS=16
+BRIGHTNESS=100
+SATURATION=120
+HUE=100
+RANDOMISE_HUE=0
+PIXEL_SIZE=128x128
+OUTPUT_SIZE=256x256
+BW=0
+THRESHOLD="50%"
+S_CONTRAST=2
+
+function usage {
+	echo "Usage:
+	$(basename $0) [options] <filename|new> [<filename>...]
+
+Options:
+	new (as file argument will pick newest file from $DEFAULT_FOLDER)
+	-p|--prefix <output file prefix, default ${PREFIX}>
+	-f|--format <image format, default ${FORMAT}>
+	-s|--single (if specified, treat image as a single one and do not split into frames)
+	-c|--colours <number of colours to dither to, default ${COLOURS}>
+	--random-hue (randomise the hues of all output images)
+	--pixel-size <pixels to resize to, default $PIXEL_SIZE>
+	--output-size <pixels to output to, default $OUTPUT_SIZE>
+	--bw (if set, convert to 1-bit black and white - overrides -c)
+	--brightness <brightness, 0-200, default $BRIGHTNESS>
+	--s-contrast <sigmoidal contrast level, 0+, default $S_CONTRAST>"
+	exit 1
+}
+
+INPUT_FILES=()
+
+while [ ! -z "$1" ]
+do
+	case "$1" in
+		-c|--colours|--colors)
+			shift; COLOURS="$1";;
+		-p|--prefix)
+			shift; PREFIX="$1";;
+		-f|--format)
+			shift; FORMAT="$1";;
+		-s|--single)
+			SPLIT=100;;
+		--random-hue)
+			echo "Will randomise hues"
+			RANDOMISE_HUE="1";;
+		--pixel-size)
+			shift; PIXEL_SIZE="$1";;
+		--output-size)
+			shift; OUTPUT_SIZE="$1";;
+		--brightness)
+			shift; BRIGHTNESS="$1";;
+		--s-contrast)
+			shift; S_CONTRAST="$1";;
+		--bw)
+			echo "Will convert to 1-bit black and white"
+			BW="1";;
+		new)
+			INPUT_FILES+=("$DEFAULT_FOLDER/$(ls -t "$DEFAULT_FOLDER" | head -n 1)")
+			;;
+		*)
+			if [[ ! -f "$1" ]]
+			then
+				echo "Invalid parameter $1"
+				usage
+			fi
+			INPUT_FILES+=("$1")
+			;;
+	esac
+
+	shift
+done
+
+# No files specified
+if [[ "${INPUT_FILES[@]}" = "" ]]
+then
+	usage
+fi
+
+TMP_PREFIX="tmp$RANDOM"
+TMP_SRC_PREFIX="tmpsrc$RANDOM"
+
+# Split out input files
+for INPUT_FILE in "${INPUT_FILES[@]}"
+do
+	echo "Splitting $INPUT_FILE into ${SPLIT}% frame(s)..."
+	LOCAL_FILE="${TMP_SRC_PREFIX}.$(basename "$INPUT_FILE")"
+	cp "$INPUT_FILE" "$LOCAL_FILE" || exit 1
+	convert "$LOCAL_FILE" -crop "${SPLIT}%x${SPLIT}%" "$TMP_PREFIX.%d.$LOCAL_FILE" || exit 1
+done
+
+if [[ "$RANDOMISE_HUE" == "1" ]]
+then
+	echo "Randomising hues..."
+	find . -name "$TMP_PREFIX.*" -depth 1 -print0 | while read -d $'\0' IMG_FILE
+	do
+		THIS_HUE="$((200 * $RANDOM / 32767))"
+#		 echo "$IMG_FILE: hue $THIS_HUE"
+		convert "$IMG_FILE" -modulate 100,100,"$THIS_HUE" "$IMG_FILE"
+	done
+fi
+
+if [[ "$BW" == "1" ]]
+then
+	COLOURS=2
+	OPTION_BW="-threshold $THRESHOLD"
+fi
+
+# Pixelate and dither to make tokens
+echo "Making pixel art tokens with prefix $PREFIX, colours $COLOURS, brightness $BRIGHTNESS, saturation $SATURATION, hue $HUE, pixels $PIXEL_SIZE, final size $OUTPUT_SIZE..."
+convert "$TMP_PREFIX".* \
+-modulate "$BRIGHTNESS","$SATURATION","$HUE" \
+-sigmoidal-contrast "$S_CONTRAST"x50% \
+-filter Point -resize "$PIXEL_SIZE" \
+-dither FloydSteinberg -colors "$COLOURS" +remap \
+-resize "$OUTPUT_SIZE" \
+$OPTION_BW \
+-define webp:lossless=true \
+-quality 75 \
+"${PREFIX}_%d.${FORMAT}" || exit 1
+echo "Created tokens"
+
+rm "$TMP_PREFIX".* "${TMP_SRC_PREFIX}".*
+echo "Removed temp files"
+
+echo "Done"

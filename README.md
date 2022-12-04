@@ -1,2 +1,3 @@
 # vtt-tools
-Small utility scripts for use with VTTs
+
+Small utility scripts for use with VTTs.
