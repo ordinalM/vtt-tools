@@ -5,8 +5,7 @@
 # Requires that ImageMagick is installed.
 
 function usage {
-	echo "Usage:
-	$(basename "$0") <image files to convert to webp"
+	echo "Usage: (basename "$0") <image files to convert to webp>"
 	exit 1
 }
 
