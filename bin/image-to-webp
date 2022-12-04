@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+# Run this to convert specified image files to lossless WEBPs.
+# Useful for converting game assets for use with Foundry VTT.
+# Requires that ImageMagick is installed.
+
+function usage {
+	echo "Usage:
+	$(basename "$0") <image files to convert to webp"
+	exit 1
+}
+
+[[ "$1" == "" ]] && usage
+
+for FILE in "$1"
+do
+	echo "Converting $FILE..."
+	WEBP_FILE="${FILE%%.*}.webp"
+	convert "$FILE" -define webp:lossless=true "$WEBP_FILE" || exit 1
+	echo "Created $WEBP_FILE"
+done
+echo "Finished."
