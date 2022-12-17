@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# TODO put these in a config file
 DEFAULT_FOLDER="$HOME/Dropbox/Photos/Midjourney"
 PREFIX="token"
 FORMAT="webp"
