@@ -6,14 +6,15 @@ FORMAT="webp"
 SPLIT=50
 COLOURS=16
 BRIGHTNESS=100
-SATURATION=120
+SATURATION=100
 HUE=100
 RANDOMISE_HUE=0
-PIXEL_SIZE=128x128
-OUTPUT_SIZE=256x256
+PIXEL_SIZE=256
+OUTPUT_SIZE=256
 BW=0
 THRESHOLD="50%"
 S_CONTRAST=2
+OPTION_GREYSCALE=""
 
 function usage {
 	echo "Usage:
@@ -28,7 +29,9 @@ Options:
 	--random-hue (randomise the hues of all output images)
 	--pixel-size <pixels to resize to, default $PIXEL_SIZE>
 	--output-size <pixels to output to, default $OUTPUT_SIZE>
-	--bw (if set, convert to 1-bit black and white - overrides -c)
+	--size <pixels to resize and output to, sets --pixel-size and --output-size at once
+	--bw-1bit (if set, convert to 1-bit black and white - overrides -c)
+	--greyscale (if set, convert to greyscale)
 	--brightness <brightness, 0-200, default $BRIGHTNESS>
 	--s-contrast <sigmoidal contrast level, 0+, default $S_CONTRAST>"
 	exit 1
@@ -54,13 +57,21 @@ do
 			shift; PIXEL_SIZE="$1";;
 		--output-size)
 			shift; OUTPUT_SIZE="$1";;
+		--size)
+			shift
+			PIXEL_SIZE="$1"
+			OUTPUT_SIZE="$1"
+			;;
 		--brightness)
 			shift; BRIGHTNESS="$1";;
 		--s-contrast)
 			shift; S_CONTRAST="$1";;
-		--bw)
+		--bw-1bit)
 			echo "Will convert to 1-bit black and white"
 			BW="1";;
+		--greyscale)
+		    echo "Will use greyscale"
+		    OPTION_GREYSCALE="-type Grayscale";;
 		new)
 			INPUT_FILES+=("$DEFAULT_FOLDER/$(ls -t "$DEFAULT_FOLDER" | head -n 1)")
 			;;
@@ -121,9 +132,10 @@ convert "$TMP_PREFIX".* \
 -dither FloydSteinberg -colors "$COLOURS" +remap \
 -resize "$OUTPUT_SIZE" \
 $OPTION_BW \
+$OPTION_GREYSCALE \
 -define webp:lossless=true \
 -quality 75 \
-"${PREFIX}_%d.${FORMAT}" || exit 1
+"${PREFIX}_%02d.${FORMAT}" || exit 1
 echo "Created tokens"
 
 rm "$TMP_PREFIX".* "${TMP_SRC_PREFIX}".*
