@@ -16,6 +16,7 @@ BW=0
 THRESHOLD="50%"
 S_CONTRAST=0
 OPTION_GREYSCALE=""
+OPTION_WEBP_LOSSLESS="-define webp:lossless=true"
 
 function usage {
 	echo "Usage:
@@ -113,7 +114,6 @@ then
 	find . -name "$TMP_PREFIX.*" -depth 1 -print0 | while read -d $'\0' IMG_FILE
 	do
 		THIS_HUE="$((200 * $RANDOM / 32767))"
-#		 echo "$IMG_FILE: hue $THIS_HUE"
 		convert "$IMG_FILE" -modulate 100,100,"$THIS_HUE" "$IMG_FILE"
 	done
 fi
@@ -134,7 +134,7 @@ convert "$TMP_PREFIX".* \
 -resize "$OUTPUT_SIZE" \
 $OPTION_BW \
 $OPTION_GREYSCALE \
--define webp:lossless=true \
+$OPTION_WEBP_LOSSLESS \
 -quality 75 \
 "${PREFIX}_%02d.${FORMAT}" || exit 1
 echo "Created tokens"
