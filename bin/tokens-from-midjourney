@@ -1,22 +1,25 @@
 #!/usr/bin/env bash
 
 # TODO put these in a config file
+
+COLOURS_NO_DITHER="all"
+
 DEFAULT_FOLDER="$HOME/Dropbox/Photos/Midjourney"
 PREFIX="token"
 FORMAT="webp"
 SPLIT=50
-COLOURS=16
+COLOURS="$COLOURS_NO_DITHER"
 BRIGHTNESS=100
 SATURATION=100
 HUE=100
 RANDOMISE_HUE=0
-PIXEL_SIZE=256
-OUTPUT_SIZE=256
+PIXEL_SIZE=200
+OUTPUT_SIZE=200
 BW=0
 THRESHOLD="50%"
 S_CONTRAST=0
 OPTION_GREYSCALE=""
-OPTION_WEBP_LOSSLESS="-define webp:lossless=true"
+OPTION_DITHER=""
 
 function usage {
 	echo "Usage:
@@ -124,17 +127,20 @@ then
 	OPTION_BW="-threshold $THRESHOLD"
 fi
 
+if [[ "$COLOURS" != "$COLOURS_NO_DITHER" ]]
+then
+    OPTION_DITHER="-filter Point -resize $PIXEL_SIZE -dither FloydSteinberg -colors $COLOURS +remap -define webp:lossless=true"
+fi
+
 # Pixelate and dither to make tokens
 echo "Making pixel art tokens with prefix $PREFIX, colours $COLOURS, brightness $BRIGHTNESS, saturation $SATURATION, hue $HUE, pixels $PIXEL_SIZE, final size $OUTPUT_SIZE..."
 convert "$TMP_PREFIX".* \
 -modulate "$BRIGHTNESS","$SATURATION","$HUE" \
 -sigmoidal-contrast "$S_CONTRAST"x50% \
--filter Point -resize "$PIXEL_SIZE" \
--dither FloydSteinberg -colors "$COLOURS" +remap \
+$OPTION_DITHER \
 -resize "$OUTPUT_SIZE" \
 $OPTION_BW \
 $OPTION_GREYSCALE \
-$OPTION_WEBP_LOSSLESS \
 -quality 75 \
 "${PREFIX}_%02d.${FORMAT}" || exit 1
 echo "Created tokens"
