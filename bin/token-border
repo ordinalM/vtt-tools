@@ -19,6 +19,7 @@ function temp_png {
   echo "tmp$RANDOM.png"
 }
 
+# TODO get this from a bash command
 function image_size {
   php -r "echo(getimagesize('$1')[0]);"
 }
