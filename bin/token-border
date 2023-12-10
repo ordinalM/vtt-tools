@@ -26,7 +26,7 @@ function image_size {
 
 INPUT_FILES=()
 HAS_FILES=0
-COLOUR="#999999"
+COLOUR="black"
 AUTO="auto"
 OPT_RANDOM="random"
 FINAL_SIZE="$AUTO"
@@ -99,7 +99,7 @@ for INPUT_FILE in "${INPUT_FILES[@]}"; do
     FINAL_SIZE="$(image_size "$INPUT_FILE")"
   fi
   if [[ "$USE_AUTO_WIDTH" = "1" ]]; then
-    WIDTH=$((FINAL_SIZE / 50))
+    WIDTH=$((FINAL_SIZE / 100))
   fi
   PADDING=$((WIDTH * 3))
   INITIAL_SIZE=$((FINAL_SIZE - PADDING * 2))
