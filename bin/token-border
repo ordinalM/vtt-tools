@@ -5,9 +5,12 @@ function usage {
 	$(basename $0) <filename> [<filename>...]
 
 Options:
-	-s|--size Set final size, \"$AUTO\" to take from input (default $FINAL_SIZE)
+	-s|--size   Set final size, \"$AUTO\" to take from input (default $FINAL_SIZE)
 	-c|--colour Set border colour, \"$OPT_RANDOM\" for random each time (default $COLOUR)
-	-w|--width Set border width, \"$AUTO\" for 1% of size (default $WIDTH)
+	-w|--width  Set border width, \"$AUTO\" for 1% of size (default $WIDTH)
+	-p|--prefix Set output file prefix (default \"$PREFIX\")
+	--suffix    Set output file prefix (default \"$SUFFIX\")
+	-f|--force  Force overwrite of output file if present
 "
   exit 1
 }
@@ -29,6 +32,9 @@ FINAL_SIZE="$AUTO"
 WIDTH="$AUTO"
 USE_AUTO_WIDTH=0
 USE_RANDOM_COLOUR=0
+PREFIX=""
+SUFFIX="-border"
+FORCE=0
 
 while [ -n "$1" ]; do
   case "$1" in
@@ -44,6 +50,17 @@ while [ -n "$1" ]; do
   -s | --size)
     shift
     FINAL_SIZE="$1"
+    ;;
+  -p | --prefix)
+    shift
+    PREFIX="$1"
+    ;;
+  --suffix)
+    shift
+    SUFFIX="$1"
+    ;;
+  -f | --force)
+    FORCE="1"
     ;;
   *)
     if [[ ! -f "$1" ]]; then
@@ -71,6 +88,12 @@ if [[ "$COLOUR" = "$OPT_RANDOM" ]]; then
 fi
 
 for INPUT_FILE in "${INPUT_FILES[@]}"; do
+  OUTFILE=$(basename "$INPUT_FILE")
+  OUTFILE="${PREFIX}${OUTFILE%%.*}${SUFFIX}.webp"
+  if [[ -f "$OUTFILE" ]] && [[ "$FORCE" = "0" ]]; then
+    echo "$OUTFILE already exists, skipping (use -f to force overwrite)"
+    continue
+  fi
   if [[ "$FINAL_SIZE" = "auto" ]]; then
     FINAL_SIZE="$(image_size "$INPUT_FILE")"
   fi
@@ -81,20 +104,19 @@ for INPUT_FILE in "${INPUT_FILES[@]}"; do
   INITIAL_SIZE=$((FINAL_SIZE - PADDING * 2))
   RADIUS=$((INITIAL_SIZE / 2))
   if [[ "$USE_RANDOM_COLOUR" = "1" ]]; then
-    COLOUR="hsb($((256 * RANDOM / 32767)),$(((128 * RANDOM / 32767)+128)),$(((128 * RANDOM / 32767)+128)))"
+    COLOUR="hsb($((256 * RANDOM / 32767)),$(((128 * RANDOM / 32767) + 128)),$(((128 * RANDOM / 32767) + 128)))"
   fi
-  echo -n "Adding ${WIDTH}px $COLOUR border to $INPUT_FILE for ${FINAL_SIZE}px image."
+  echo -n "Adding ${WIDTH}px $COLOUR border to $INPUT_FILE for ${FINAL_SIZE}px image"
   RESIZE_FILE="$(temp_png)"
   convert "$INPUT_FILE" -resize "${INITIAL_SIZE}x${INITIAL_SIZE}" "$RESIZE_FILE" | exit 1
   echo -n "."
   CIRCLE_FILE="$(temp_png)"
   convert -size "${INITIAL_SIZE}x${INITIAL_SIZE}" xc:none -fill "$RESIZE_FILE" -draw "circle $RADIUS,$RADIUS $RADIUS,1" "$CIRCLE_FILE" | exit 1
   echo -n "."
-  OUTFILE="${INPUT_FILE%%.*}.border.webp"
   convert "$CIRCLE_FILE" -bordercolor none -border "$PADDING" -background "$COLOUR" \
     -alpha background -channel A -blur "0x$WIDTH" -level 0,1% -quality 75 "$OUTFILE" | exit 1
   rm "$RESIZE_FILE" "$CIRCLE_FILE"
-  echo "created $OUTFILE"
+  echo ". created $OUTFILE"
 done
 
 echo "All done."
