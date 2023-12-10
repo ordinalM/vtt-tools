@@ -11,13 +11,14 @@ function usage {
 
 [[ "$1" == "" ]] && usage
 
-while [ ! -z "$1" ]
+while [ -n "$1" ]
 do
 	FILE="$1"
 	shift
 	echo "Converting $FILE..."
 	WEBP_FILE="${FILE%%.*}.webp"
-	convert "$FILE" -define webp:lossless=true "$WEBP_FILE" || exit 1
+#	convert "$FILE" -define webp:lossless=true "$WEBP_FILE" || exit 1
+	convert "$FILE" -quality 75 "$WEBP_FILE" || exit 1
 	echo "Created $WEBP_FILE"
 done
 echo "Finished."

@@ -138,9 +138,12 @@ convert "$TMP_PREFIX".* \
 -modulate "$BRIGHTNESS","$SATURATION","$HUE" \
 -sigmoidal-contrast "$S_CONTRAST"x50% \
 $OPTION_DITHER \
--resize "$OUTPUT_SIZE" \
 $OPTION_BW \
 $OPTION_GREYSCALE \
+-thumbnail "${OUTPUT_SIZE}x${OUTPUT_SIZE}>" \
+-gravity center \
+-background transparent \
+-extent "${OUTPUT_SIZE}x${OUTPUT_SIZE}" \
 -quality 75 \
 "${PREFIX}_%02d.${FORMAT}" || exit 1
 echo "Created tokens"
