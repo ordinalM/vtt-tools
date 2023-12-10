@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+
+function usage {
+  echo "Usage:
+	$(basename $0) <filename> [<filename>...]
+
+Options:
+	-s|--size Set final size, \"$AUTO\" to take from input (default $FINAL_SIZE)
+	-c|--colour Set border colour, \"$OPT_RANDOM\" for random each time (default $COLOUR)
+	-w|--width Set border width, \"$AUTO\" for 1% of size (default $WIDTH)
+"
+  exit 1
+}
+
+function temp_png {
+  echo "tmp$RANDOM.png"
+}
+
+function image_size {
+  php -r "echo(getimagesize('$1')[0]);"
+}
+
+INPUT_FILES=()
+HAS_FILES=0
+COLOUR="#999999"
+AUTO="auto"
+OPT_RANDOM="random"
+FINAL_SIZE="$AUTO"
+WIDTH="$AUTO"
+USE_AUTO_WIDTH=0
+USE_RANDOM_COLOUR=0
+
+while [ -n "$1" ]; do
+  case "$1" in
+  -c | --colour | --color)
+    #  https://imagemagick.org/script/color.php
+    shift
+    COLOUR="$1"
+    ;;
+  -w | --width)
+    shift
+    WIDTH="$1"
+    ;;
+  -s | --size)
+    shift
+    FINAL_SIZE="$1"
+    ;;
+  *)
+    if [[ ! -f "$1" ]]; then
+      echo "Invalid parameter $1"
+      usage
+    fi
+    INPUT_FILES+=("$1")
+    HAS_FILES=1
+    ;;
+  esac
+
+  shift
+done
+
+if [[ "$HAS_FILES" = "0" ]]; then
+  usage
+fi
+
+if [[ "$WIDTH" = "$AUTO" ]]; then
+  USE_AUTO_WIDTH=1
+fi
+
+if [[ "$COLOUR" = "$OPT_RANDOM" ]]; then
+  USE_RANDOM_COLOUR=1
+fi
+
+for INPUT_FILE in "${INPUT_FILES[@]}"; do
+  if [[ "$FINAL_SIZE" = "auto" ]]; then
+    FINAL_SIZE="$(image_size "$INPUT_FILE")"
+  fi
+  if [[ "$USE_AUTO_WIDTH" = "1" ]]; then
+    WIDTH=$((FINAL_SIZE / 50))
+  fi
+  PADDING=$((WIDTH * 3))
+  INITIAL_SIZE=$((FINAL_SIZE - PADDING * 2))
+  RADIUS=$((INITIAL_SIZE / 2))
+  if [[ "$USE_RANDOM_COLOUR" = "1" ]]; then
+    COLOUR="hsb($((256 * RANDOM / 32767)),$(((128 * RANDOM / 32767)+128)),$(((128 * RANDOM / 32767)+128)))"
+  fi
+  echo -n "Adding ${WIDTH}px $COLOUR border to $INPUT_FILE for ${FINAL_SIZE}px image."
+  RESIZE_FILE="$(temp_png)"
+  convert "$INPUT_FILE" -resize "${INITIAL_SIZE}x${INITIAL_SIZE}" "$RESIZE_FILE" | exit 1
+  echo -n "."
+  CIRCLE_FILE="$(temp_png)"
+  convert -size "${INITIAL_SIZE}x${INITIAL_SIZE}" xc:none -fill "$RESIZE_FILE" -draw "circle $RADIUS,$RADIUS $RADIUS,1" "$CIRCLE_FILE" | exit 1
+  echo -n "."
+  OUTFILE="${INPUT_FILE%%.*}.border.webp"
+  convert "$CIRCLE_FILE" -bordercolor none -border "$PADDING" -background "$COLOUR" \
+    -alpha background -channel A -blur "0x$WIDTH" -level 0,1% -quality 75 "$OUTFILE" | exit 1
+  rm "$RESIZE_FILE" "$CIRCLE_FILE"
+  echo "created $OUTFILE"
+done
+
+echo "All done."
