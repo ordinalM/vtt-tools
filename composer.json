@@ -1,0 +1,15 @@
+{
+    "name": "ordinal/vtt-tools",
+    "autoload": {
+        "psr-4": {
+            "Ordinal\\VttTools\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Ordinal M",
+            "email": "ordinal@ordinalmalaprop.com"
+        }
+    ],
+    "require": {}
+}
