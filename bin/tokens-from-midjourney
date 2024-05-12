@@ -4,7 +4,7 @@
 
 COLOURS_NO_DITHER="all"
 
-DEFAULT_FOLDER="$HOME/Dropbox/Photos/Midjourney"
+DEFAULT_FOLDER="$HOME/Dropbox/Midjourney"
 PREFIX="token"
 FORMAT="webp"
 SPLIT=50

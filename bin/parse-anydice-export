@@ -1,0 +1,31 @@
+#!/usr/bin/env php
+<?php
+
+$file = $argv[1];
+if (!file_exists($file)) {
+    throw new InvalidArgumentException("File $file not found");
+}
+$file_as_string = str_replace("#,%\n", '', file_get_contents($file));
+$chunks = explode("\n\n", trim($file_as_string));
+
+$header = ['Roll'];
+$rows = [];
+foreach ($chunks as $chunk) {
+    $chunk_lines = explode("\n", $chunk);
+    $title_line = str_getcsv(array_shift($chunk_lines));
+    $this_row = [$title_line[0]];
+    foreach ($chunk_lines as $n => $chunk_line) {
+        $chunk_line_parsed = str_getcsv($chunk_line);
+        $this_row[] = round((float)$chunk_line_parsed[1]);
+        if (count($header) > count($chunk_lines)) {
+            continue;
+        }
+        $header[$n + 1] = $chunk_line_parsed[0];
+    }
+    $rows[] = $this_row;
+}
+
+fputcsv(STDOUT, $header);
+foreach ($rows as $row) {
+    fputcsv(STDOUT, $row);
+}
