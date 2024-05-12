@@ -11,5 +11,10 @@
             "email": "ordinal@ordinalmalaprop.com"
         }
     ],
-    "require": {}
+    "require": {
+        "ext-pdo": "*",
+        "phpdocumentor/reflection-docblock": "^5.4",
+        "vanilla/garden-container": "^4.1",
+        "vanilla/garden-cli": "^4.0"
+    }
 }
